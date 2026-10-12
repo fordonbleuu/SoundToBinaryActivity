@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="BSCS-3 Multimedia Lab: sound waves to binary." />
+<title>Sound-to-Binary Converter | Multimedia Lab</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="ocean-bg" aria-hidden="true"></div>
+<header class="site-header">
+<div class="wrap header-inner">
+<p class="lab-label">MULTIMEDIA LAB</p>
+<h1>SOUND-TO-BINARY CONVERTER</h1>
+<p class="subtitle">Explore how sound waves become digital data.</p>
+<p class="student-meta"><span>Clifford Probetso</span><span class="dot">•</span><span>BSCS-3 | Section 36</span></p>
+<p class="subtitle small">Type a wave, press Convert, and see its measurements and binary result. One full wave is sampled evenly over its period.</p>
+<div class="header-wave" aria-hidden="true">
+<svg viewBox="0 0 300 32" preserveAspectRatio="none"><path d="M0 16 Q 15 2, 30 16 T 60 16 T 90 16 T 120 16 T 150 16 T 180 16 T 210 16 T 240 16 T 270 16 T 300 16" /></svg>
+</div>
+</div>
+</header>
+<main class="wrap">
+<div class="dashboard">
+<section class="card controls" aria-labelledby="controls-title">
+<h2 id="controls-title"><span class="step">01</span> Your Wave Inputs</h2>
+<p class="card-hint">Change any value, then press Convert Wave.</p>
+<form id="converter-form" novalidate>
+<div class="field"><label for="freq">Frequency (Hz)</label><input type="number" id="freq" value="1000" step="any" /><small>Cycles per second. Must be &gt; 0.</small></div>
+<div class="field"><label for="amplitude">Amplitude (0–1)</label><input type="number" id="amplitude" value="1" step="0.1" min="0" max="1" /><small>0 = flat, 1 = full height.</small></div>
+<div class="field"><label for="samples">Number of Samples</label><input type="number" id="samples" value="4" step="1" min="2" max="64" /><small>Whole number 2 to 64.</small></div>
+<div class="field"><label for="bits">Bits per Sample</label><input type="number" id="bits" value="2" step="1" min="1" max="8" /><small>Whole number 1 to 8.</small></div>
+<div class="btn-row"><button type="submit" id="convert-btn" class="btn primary">CONVERT WAVE</button><button type="button" id="play-btn" class="btn ghost">PLAY TONE (1s)</button><button type="button" id="reset-btn" class="btn ghost">RESET</button></div>
+<div class="preset-row"><span class="small">Quick fill:</span><button type="button" class="preset" data-preset="1000,1,4,2">Check</button><button type="button" class="preset" data-preset="440,0.8,8,3">Test A</button><button type="button" class="preset" data-preset="200,0.5,6,4">Test B</button><button type="button" class="preset" data-preset="500,0.9,5,3">Test C</button></div>
+<div id="errors" class="error-box" role="alert" aria-live="polite" hidden></div>
+<p id="playStatus" class="small" role="status">Press Play to hear the tone. Turn your volume down first.</p>
+</form>
+</section>
+<section class="card wave-card" aria-labelledby="wave-title">
+<h2 id="wave-title"><span class="step">02</span> Wave Visualization <span class="live"><i class="live-dot"></i>LIVE</span></h2>
+<div class="canvas-holder"><canvas id="waveCanvas" role="img" aria-label="Sine wave with sample markers"></canvas></div>
+<div class="legend"><span><i class="swatch line"></i> Waveform</span><span><i class="swatch dot-mark"></i> Sampling points</span><button type="button" id="anim-btn" class="preset" aria-pressed="true">Pause animation</button></div>
+<p class="fine-print">Live preview — the wave scrolls and the dots ride it. The table is a frozen snapshot at phase 0. Visual aid only, math follows formulas.</p>
+</section>
+<section class="card facts-card" aria-label="Wave Facts">
+<h2><span class="step">02b</span> Wave Facts</h2>
+<div class="facts">
+<article class="card metric"><h3>Amplitude</h3><p id="fact-amplitude" aria-live="polite">—</p><small>as typed, 0–1</small></article>
+<article class="card metric"><h3>Frequency</h3><p id="fact-frequency" aria-live="polite">—</p><small>as typed, Hz</small></article>
+<article class="card metric"><h3>Period</h3><p id="fact-period" aria-live="polite">—</p><small>1000 ÷ f, ms</small></article>
+<article class="card metric"><h3>Wavelength</h3><p id="fact-wavelength" aria-live="polite">—</p><small>343 ÷ f, m / cm</small></article>
+</div>
+</section>
+<section class="card table-card" aria-labelledby="table-title">
+<h2 id="table-title"><span class="step">03</span> Sample Table</h2>
+<div class="table-scroll"><table id="results-table">
+<thead><tr><th>Sample #</th><th>Time (ms)</th><th>Amplitude</th><th>Level</th><th>Binary</th></tr></thead>
+<tbody id="results-body"></tbody>
+</table><p id="table-empty" class="empty-note">No conversion yet. Press CONVERT WAVE.</p></div>
+</section>
+<section class="card binary-card" aria-labelledby="binary-title">
+<h2 id="binary-title"><span class="step">04</span> Binary Result</h2>
+<div class="binary-line" id="binary-sequence" tabindex="0">—</div>
+<p class="total-bits">Total bits: <strong id="total-bits">—</strong></p>
+<button type="button" id="copy-btn" class="btn primary small">COPY BINARY</button>
+</section>
+</div>
+<section class="card test-card" aria-labelledby="test-title">
+<h2 id="test-title"><span class="step">05</span> Test Results <span class="badge">matches app output</span></h2>
+<p class="card-hint">These numbers are copied from what my app actually shows for each setting.</p>
+<div class="table-scroll"><table id="test-table">
+<thead><tr><th>Test</th><th>Frequency</th><th>Amplitude</th><th>Samples</th><th>Bits</th><th>Period</th><th>Wavelength</th><th>Total Bits</th><th>Binary Result</th></tr></thead>
+<tbody>
+<tr><td>A</td><td>440 Hz</td><td>0.8</td><td>8</td><td>3</td><td>2.27 ms</td><td>78.0 cm</td><td>24</td><td>100 101 110 101 100 010 001 010</td></tr>
+<tr><td>B</td><td>200 Hz</td><td>0.5</td><td>6</td><td>4</td><td>5.00 ms</td><td>1.72 m</td><td>24</td><td>1000 1011 1011 1000 0100 0100</td></tr>
+<tr><td>C</td><td>500 Hz</td><td>0.9</td><td>5</td><td>3</td><td>2.00 ms</td><td>68.6 cm</td><td>15</td><td>100 110 101 010 001</td></tr>
+</tbody>
+</table></div>
+</section>
+<section class="card explain-card" aria-labelledby="explain-title">
+<h2 id="explain-title"><span class="step">06</span> Explain It</h2>
+<ol class="explain-list">
+<li><p><strong>How does your app change a sound wave into binary? Name the three steps.</strong></p><p>My app changes sound into binary in three steps: sampling (measure the wave height at even times over one period), quantization (round each height to the nearest whole level from 0 to 2^bits − 1), and encoding (write each level in binary with leading zeros so every value has exactly "bits" digits).</p></li>
+<li><p><strong>Run Test A again with 2 bits, then 6 bits. Which gives more detail about the wave, and why?</strong></p><p>6 bits gives more detail because it has 64 levels while 2 bits has only 4 levels, so the steps are smaller and each binary value stays closer to the real wave height.</p></li>
+<li><p><strong>Which test has the longest wavelength? How is wavelength connected to frequency?</strong></p><p>Test B has the longest wavelength at 1.72 m. Wavelength equals 343 / frequency, so they are inversely related: a lower frequency gives a longer wavelength.</p></li>
+<li><p><strong>What was the hardest stage to build, and how did you fix it?</strong></p><p>The hardest stage was Stage 4 (binary), because the levels rounded wrong and the binary lost its leading zeros. I fixed it by testing with frequency 1000, amplitude 1, samples 4, bits 2 until it matched 10 11 10 00, using Math.round for rounding up and padStart for the leading zeros.</p></li>
+</ol>
+</section>
+</main>
+<footer class="wrap footer"><p>BSCS-3 Multimedia Activity — HTML, CSS and vanilla JS.</p></footer>
+<script src="script.js"></script>
+</body>
+</html>
